@@ -1,3 +1,35 @@
+## 頓挫メモ
+
+Twitter 実況するときにタグが自動で入るようにしたいなぁと考えた。  
+Twitter にはハッシュタグを検索した画面でツイートしようとするとタグが自動補完される挙動がある。が、どうも「ポストする」のボタンを押したときはその挙動になって、`N`ショートカットで開くとタグが保持されない。このままだとスマホからは楽にツイートできるが、PC のときは大いに困る。  
+なので、PC から実況をしたい自分はどうにか「ハッシュタグをツイートした場合はツイート欄に次からも残るようにする拡張機能」を作りたいと考えた。過去に[TweetDeck に作った機能](https://github.com/zenmaibane/KeepHashTagInTweetDeck)と同じような感じだ。
+
+### 頓挫理由その ① ツイート欄に無理やりテキストを突っ込んでも認識されない。
+
+Textarea で管理されていれば value を突っ込んで～とかができるけど、エディタ部分が自作されている。1 行ごとに生成される DOM は次のような感じだ。
+
+```
+<div class="" data-block="true" data-editor="5ghsa" data-offset-key="agedr-0-0">
+  <div data-offset-key="agedr-0-0" class="public-DraftStyleDefault-block public-DraftStyleDefault-ltr">
+    <span data-offset-key="agedr-0-0">
+      <span data-text="true">テストだよん</span>
+    </span>
+  </div>
+</div>
+```
+
+似たような DOM を無理やり生成して突っ込めば見た目上は反映されるが、送信されるときには無視される。外部から無理やり突っ込んだ DOM だし、useState の検知から外れているみたいな挙動をしてそう。
+
+### 頓挫理由その ② `x.com/compose/post?text=hoge`を無理やり開いても体験が悪い
+
+`x.com/compose/post?text=hoge`のように`text`クエリに文言を指定すれば、予めテキストが埋まったツイート欄が開かれるが、どうしても chrome 拡張側だと`window.open`とか`location.href=~~~`するしかなくて、サイトのロードが挟まり実況のテンポが削がれる。`N`ショートカットだったり「ポストする」のボタンを押したときもその URL が開かれる挙動をする。これも Twitter サイト内だったらツイート欄のモーダルが開かれて良い感じに見えるのだが、サイトの`router`を chrome 拡張側からいじれない以上はどうしようもない。
+
+### 頓挫理由その ③ 「ポストする」のボタンを`onClick`するショートカットを作ればよいのでは？と考えたがそう上手くはいかない
+
+「ポストする」のボタンを押せば同等の機能ができるということはそこのイベント発火すればいいじゃんと考えたが、② で書いたように`x.com/compose/post`の URL に遷移するような挙動なため、a タグで作られている。`document.querySelector('[data-testid="SideNav_NewTweet_Button"]').dispatchEvent(new PointerEvent('click'))`みたいなことを書いて実行するも、そう上手くはいかず、実際には ② と同じような挙動をしてしまう。まぁそうか......
+
+ということを試した上で、これ以上のやりかたが思いつかない&もはや実況ツイート専用欄としての iframe を無理やり作って突っ込むみたいになりそうだったので頓挫することにした。うーーーーん、機能自体は本当にほしいからどうにか実現させたい。
+
 <div align="center">
   <br>
  <img src="https://raw.githubusercontent.com/sinanbekar/browser-extension-react-typescript-starter/main/public/images/extension_128.png" alt="Browser Extension React & TypeScript Starter" width="128">
