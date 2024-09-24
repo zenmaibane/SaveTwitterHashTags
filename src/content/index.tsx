@@ -1,15 +1,20 @@
 import 'webextension-polyfill';
 import 'construct-style-sheets-polyfill';
 import { proxyStore } from '../app/proxyStore';
-
 proxyStore.ready().then(async () => {
-  // Note:DOMが構築されるまで待つ。もっと頭のいい方法をしたい。
-  await sleep(3000);
-  const tweetButtonDom = document.querySelector<HTMLAnchorElement>(
-    'a[data-testid="SideNav_NewTweet_Button"]'
-  );
+  // Note:DOMが構築されるまで待つ。
+  let tweetButtonDom = null;
+  while (!tweetButtonDom) {
+    tweetButtonDom = document.querySelector<HTMLAnchorElement>(
+      'a[data-testid="SideNav_NewTweet_Button"]'
+    );
+    await sleep(100);
+  }
+
   const shortCutFunction = (e: KeyboardEvent) => {
-    if (!e.target) {
+    const url = new URL(window.location.href);
+    const pathName = url.pathname;
+    if (!e.target || pathName !== '/search') {
       return;
     }
     const isFocusingTextArea = e.target instanceof HTMLTextAreaElement;
